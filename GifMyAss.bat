@@ -43,9 +43,10 @@ set "lossless=0"
 set "compression=6"
 set "qscale=75"
 set "preset=4"
-set "output=output"
+set "outputDIR=output"
+set "batchmodeDIR=batchmode"
 
-if not exist ".\%output%\" (md .\%output%\)
+if not exist "%outputDIR%\" (md %outputDIR%\)
 
 
 :unkwnFormat
@@ -104,12 +105,12 @@ if "%batchmode%"=="1" (goto batchmode)
 
 for %%F in ("%inputFile%") do (
     echo.
-    echo %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%output%\%%~nF_out.avif"
+    echo %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%outputDIR%\%%~nF_out.avif"
     echo.
     echo Proceed with Enter.
     pause>nul
 
-    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%output%\%%~nF_out.avif"
+    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%outputDIR%\%%~nF_out.avif"
 )
 
 goto end
@@ -143,12 +144,12 @@ if "%batchmode%"=="1" (goto batchmode)
 
 for %%F in ("%inputFile%") do (
     echo.
-    echo %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "%output%\%%~nF_out.webp"
+    echo %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "%outputDIR%\%%~nF_out.webp"
     echo.
     echo Proceed with Enter.
     pause>nul
 
-    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "%output%\%%~nF_out.webp"
+    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "%outputDIR%\%%~nF_out.webp"
 )
 
 goto end
@@ -158,19 +159,11 @@ goto end
 set "input="
 goto :eof
 
-:isBatchmode
-if "%batchmode%"=="1" (
-    goto batchmode
-)
-exit /b
-
 ::Batchmode
 :batchmode
-if not exist .\batchmode\ (
-    md batchmode
-)
+if not exist "%batchmodeDIR%\" (md %batchmodeDIR%\)
 echo.
-echo Copy all files into the folder "batchmode" that you want to convert to %format%.
+echo Copy all files into the folder "%batchmodeDIR%" that you want to convert to %format%.
 echo.
 echo Proceed with Enter.
 pause>nul
@@ -180,7 +173,7 @@ pause
 :AVIF_BATCH
 echo.
 echo All these files will be converted to %format%:
-dir batchmode\ /B /A
+dir "%batchmodeDIR%\" /B /A
 :confirm_avif_batch_err
 set /p "confirm=Continue? (Y) : "
 if /I not "%confirm%"=="Y" (
@@ -189,20 +182,20 @@ if /I not "%confirm%"=="Y" (
 )
 
 echo.
-echo %ffmpeg_cmd% -i "batchmode\*" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%output%\*_out.avif"
+echo %ffmpeg_cmd% -i "%batchmodeDIR%\*" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%outputDIR%\*_out.avif"
 echo.
 echo Proceed with Enter.
 pause>nul
 
-for %%F in (batchmode\*.*) do (
-    %ffmpeg_cmd% -i "%%F" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%output%\%%~nF_out.avif"
+for %%F in ("%batchmodeDIR%\*.*") do (
+    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%outputDIR%\%%~nF_out.avif"
 )
 goto end
 
 :WEBP_BATCH
 echo.
 echo All these files will be converted to %format%:
-dir batchmode\ /B /A
+dir "%batchmodeDIR%\" /B /A
 :confirm_webp_batch_err
 set /p "confirm=Continue? (Y) : "
 if /I not "%confirm%"=="Y" (
@@ -211,13 +204,13 @@ if /I not "%confirm%"=="Y" (
 )
 
 echo.
-echo %ffmpeg_cmd% -i "batchmode\*" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "%output%\*_out.webp"
+echo %ffmpeg_cmd% -i "%batchmodeDIR%\*" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "%outputDIR%\*_out.webp"
 echo.
 echo Proceed with Enter.
 pause>nul
 
-for %%F in (batchmode\*.*) do (
-    %ffmpeg_cmd% -i "%%F" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -qscale %qscale% -preset default -loop 0 -an -vsync 0 "%output%\%%~nF_out.webp"
+for %%F in ("%batchmodeDIR%\*.*") do (
+    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -qscale %qscale% -preset default -loop 0 -an -vsync 0 "%outputDIR%\%%~nF_out.webp"
 )
 goto end
 
