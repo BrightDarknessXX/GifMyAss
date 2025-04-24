@@ -17,7 +17,7 @@ if "%1"=="batch" (
     echo GifMyAss
 )
 
-echo Made by _BrightDarkness_ v1.0 with FFMPEG
+echo Made by _BrightDarkness_ v1.0a with FFMPEG
 echo.
 
 :: Check if ffmpeg is available
@@ -43,8 +43,9 @@ set "lossless=0"
 set "compression=6"
 set "qscale=75"
 set "preset=4"
+set "output=output"
 
-if not exist ".\output\" (md .\output\)
+if not exist ".\%output%\" (md .\%output%\)
 
 
 :unkwnFormat
@@ -103,12 +104,12 @@ if "%batchmode%"=="1" (goto batchmode)
 
 for %%F in ("%inputFile%") do (
     echo.
-    echo %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "output\%%~nF_out.avif"
+    echo %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%output%\%%~nF_out.avif"
     echo.
     echo Proceed with Enter.
     pause>nul
 
-    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "output\%%~nF_out.avif"
+    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%output%\%%~nF_out.avif"
 )
 
 goto end
@@ -142,12 +143,12 @@ if "%batchmode%"=="1" (goto batchmode)
 
 for %%F in ("%inputFile%") do (
     echo.
-    echo %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "output\%%~nF_out.webp"
+    echo %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "%output%\%%~nF_out.webp"
     echo.
     echo Proceed with Enter.
     pause>nul
 
-    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "output\%%~nF_out.webp"
+    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "%output%\%%~nF_out.webp"
 )
 
 goto end
@@ -188,13 +189,13 @@ if /I not "%confirm%"=="Y" (
 )
 
 echo.
-echo %ffmpeg_cmd% -i "batchmode\*" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "output\*_out.avif"
+echo %ffmpeg_cmd% -i "batchmode\*" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%output%\*_out.avif"
 echo.
 echo Proceed with Enter.
 pause>nul
 
 for %%F in (batchmode\*.*) do (
-    %ffmpeg_cmd% -i "%%F" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "output\%%~nF_out.avif"
+    %ffmpeg_cmd% -i "%%F" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%output%\%%~nF_out.avif"
 )
 goto end
 
@@ -210,13 +211,13 @@ if /I not "%confirm%"=="Y" (
 )
 
 echo.
-echo %ffmpeg_cmd% -i "batchmode\*" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "output\*_out.webp"
+echo %ffmpeg_cmd% -i "batchmode\*" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -q:v %qscale% -preset default -loop 0 -an -fps_mode passthrough "%output%\*_out.webp"
 echo.
 echo Proceed with Enter.
 pause>nul
 
 for %%F in (batchmode\*.*) do (
-    %ffmpeg_cmd% -i "%%F" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -qscale %qscale% -preset default -loop 0 -an -vsync 0 "output\%%~nF_out.webp"
+    %ffmpeg_cmd% -i "%%F" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -qscale %qscale% -preset default -loop 0 -an -vsync 0 "%output%\%%~nF_out.webp"
 )
 goto end
 
