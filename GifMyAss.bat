@@ -1,15 +1,48 @@
 @echo off
 
+echo Made by _BrightDarkness_ v1.0a with FFMPEG
+echo.
+
+::Default Values
+set "FPS=30"
+set "scale=-2:500"
+set "CRF=25"
+set "lossless=0"
+set "compression=6"
+set "qscale=75"
+set "preset=4"
+set "outputDIR=output"
+set "batchmodeDIR=batchmode"
+
 :: Check for help argument
 if /I "%1"=="help" (
     echo ---------------------------------------------------
     echo Usage:
     echo    GifMyAss.bat          = Interactive mode
     echo    GifMyAss.bat batch    = Batch mode
+    echo    GifMyAss.bat default  = List default values
     echo    GifMyAss.bat help     = Show this help message
     echo ---------------------------------------------------
     exit /b
 )
+
+:: Lists default values
+if /I "%1"=="default" (
+    echo ---------------------------------------------------
+    echo Default Values:
+    echo FPS            = %FPS%
+    echo scale          = %scale%
+    echo CRF            = %CRF%
+    echo lossless       = %lossless% 
+    echo compression    = %compression%
+    echo qscale         = %qscale%
+    echo preset         = %preset%
+    echo outputDIR      = %outputDIR%
+    echo batchmodeDIR   = %batchmodeDIR%
+    exit /b
+)
+
+:: Check for batchmode
 if "%1"=="batch" (
     set "batchmode=1"
     echo GifMyAss Batchmode
@@ -18,8 +51,6 @@ if "%1"=="batch" (
     echo GifMyAss
 )
 
-echo Made by _BrightDarkness_ v1.0a with FFMPEG
-echo.
 
 :: Check if ffmpeg is available
 set "ffmpeg_cmd=ffmpeg"
@@ -35,21 +66,10 @@ if errorlevel 1 (
         exit /b
     )
 )
-
-::Default Values
-set "FPS=30"
-set "scale=-2:500"
-set "CRF=25"
-set "lossless=0"
-set "compression=6"
-set "qscale=75"
-set "preset=4"
-set "outputDIR=output"
-set "batchmodeDIR=batchmode"
-
 if not exist "%outputDIR%\" (md "%outputDIR%\")
 
 
+::Start
 :unkwnFormat
 set /p "format=AVIF or WEBP : "
 
