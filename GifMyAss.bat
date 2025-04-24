@@ -46,7 +46,7 @@ set "preset=4"
 set "outputDIR=output"
 set "batchmodeDIR=batchmode"
 
-if not exist "%outputDIR%\" (md %outputDIR%\)
+if not exist "%outputDIR%\" (md "%outputDIR%\")
 
 
 :unkwnFormat
