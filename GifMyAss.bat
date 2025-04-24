@@ -39,6 +39,7 @@ if /I "%1"=="default" (
     echo preset         = %preset%
     echo outputDIR      = %outputDIR%
     echo batchmodeDIR   = %batchmodeDIR%
+    echo ---------------------------------------------------
     exit /b
 )
 
