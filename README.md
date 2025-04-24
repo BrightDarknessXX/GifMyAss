@@ -1,6 +1,8 @@
 # GifMyAss
 GifMyAss.bat is a script takes videos and creates animated pictures in these formats: AVIF, WEBP
 
+Since it's difficult to remember all the command-lines for FFMPEG, and it's hard to find a good CLI or GUI for this task that works the way I need, I created this script and wanted to share it with you.
+
 AVIF uses libsvtav1 and WEBP uses libwebp.
 
 Usage:
