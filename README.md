@@ -31,5 +31,7 @@ Batch mode will create a folder "batchmode" and will convert every file in that 
 
 Instead of using the reference encoder libaom-av1, I use the libsvtav1 for multi-threading and WAY FASTER conversion.
 
+You can define your own output or batchmode path. You must use normal characters like 0-9, a-z or ! for your folder. ÜÄÖ is not allowed or may need some bypass.
+
 # Prerequisites
 You need to have FFMPEG installed and add it to the PATH environment variables OR have the FFMPEG.exe saved next to GifMyAss.bat. This script will find FFMPEG this way.
