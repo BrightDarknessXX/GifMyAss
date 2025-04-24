@@ -14,6 +14,7 @@ if "%1"=="batch" (
     set "batchmode=1"
     echo GifMyAss Batchmode
 ) else (
+    set "batchmode=0"
     echo GifMyAss
 )
 
