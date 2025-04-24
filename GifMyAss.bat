@@ -161,7 +161,7 @@ goto :eof
 
 ::Batchmode
 :batchmode
-if not exist "%batchmodeDIR%\" (md %batchmodeDIR%\)
+if not exist "%batchmodeDIR%\" (md "%batchmodeDIR%\")
 echo.
 echo Copy all files into the folder "%batchmodeDIR%" that you want to convert to %format%.
 echo.
@@ -188,7 +188,7 @@ echo Proceed with Enter.
 pause>nul
 
 for %%F in ("%batchmodeDIR%\*.*") do (
-    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%outputDIR%\%%~nF_out.avif"
+    %ffmpeg_cmd% -i "%%F" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libsvtav1 -crf %CRF% -preset %preset% -b:v 0 -an -f avif "%outputDIR%\%%~nF_out.avif"
 )
 goto end
 
@@ -210,7 +210,7 @@ echo Proceed with Enter.
 pause>nul
 
 for %%F in ("%batchmodeDIR%\*.*") do (
-    %ffmpeg_cmd% -i %%F -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -qscale %qscale% -preset default -loop 0 -an -vsync 0 "%outputDIR%\%%~nF_out.webp"
+    %ffmpeg_cmd% -i "%%F" -vf "fps=%FPS%,scale=%scale%:flags=lanczos" -c:v libwebp -lossless %lossless% -compression_level %compression% -qscale %qscale% -preset default -loop 0 -an -vsync 0 "%outputDIR%\%%~nF_out.webp"
 )
 goto end
 
