@@ -3,7 +3,7 @@ GifMyAss.bat is a script takes videos and creates animated pictures in these for
 
 Since it's difficult to remember all the command-lines for FFMPEG, and it's hard to find a good CLI or GUI for this task that works the way I need, I created this script and wanted to share it with you.
 
-AVIF uses libsvtav1 and WEBP uses libwebp.
+AVIF uses libsvtav1 and WEBP uses libwebp. Sadly, no transparency support. Working on a google gif2web solution.
 
 Usage:
 - GifMyAss.bat          = Interactive mode
