@@ -1,27 +1,36 @@
 @echo off
 
-echo Made by _BrightDarkness_ v1.0a with FFMPEG
+echo Made by _BrightDarkness_ v1.1 with FFMPEG
 echo.
 
 ::Default Values
 set "FPS=30"
-set "scale=-2:500"
+set "scale=-1:-1"
 set "CRF=25"
 set "lossless=0"
 set "compression=6"
 set "qscale=75"
 set "preset=4"
+set "gif2webpq=80"
+set "gif2webpm=6"
 set "outputDIR=output"
 set "batchmodeDIR=batchmode"
+
+:: Check for gif2webp
+if /I "%1"=="gif2webp" (
+    goto gif2webp
+)
 
 :: Check for help argument
 if /I "%1"=="help" (
     echo ---------------------------------------------------
     echo Usage:
-    echo    GifMyAss.bat          = Interactive mode
-    echo    GifMyAss.bat batch    = Batch mode
-    echo    GifMyAss.bat default  = List default values
-    echo    GifMyAss.bat help     = Show this help message
+    echo    GifMyAss.bat                = Interactive mode
+    echo    GifMyAss.bat batch          = Batch mode
+    echo    GifMyAss.bat default        = List default values
+    echo    GifMyAss.bat gif2webp       = Uses google's gif2webp
+    echo    GifMyAss.bat gif2webp batch = gif2webp Batch mode
+    echo    GifMyAss.bat help           = Show this help message
     echo ---------------------------------------------------
     exit /b
 )
@@ -37,6 +46,8 @@ if /I "%1"=="default" (
     echo compression    = %compression%
     echo qscale         = %qscale%
     echo preset         = %preset%
+    echo gif2webpq      = %gif2webpq%
+    echo gif2webpm      = %gif2webpm%
     echo outputDIR      = %outputDIR%
     echo batchmodeDIR   = %batchmodeDIR%
     echo ---------------------------------------------------
@@ -96,7 +107,8 @@ call :resetInput
 
 echo.
 echo Width:Height
-echo -2 will automatically adjust height or width
+echo -1 will automatically adjust height or width
+echo -2 same but make it an even number
 echo.
 echo Default=%scale%
 set /p "input=Resolution : "
@@ -190,7 +202,6 @@ echo.
 echo Proceed with Enter.
 pause>nul
 goto %format%_BATCH
-pause
 
 :AVIF_BATCH
 echo.
@@ -236,6 +247,91 @@ for %%F in ("%batchmodeDIR%\*.*") do (
 )
 goto end
 
+:gif2webp_BATCH
+echo.
+echo All these files will be converted to %format%:
+dir "%batchmodeDIR%\*.gif" /B /A
+:confirm_gif2webp_batch_err
+set /p "confirm=Continue? (Y) : "
+if /I not "%confirm%"=="Y" (
+    echo Input was not Y.
+    goto confirm_gif2webp_batch_err
+)
+
+echo.
+echo %gif2webp_cmd% "%batchmodeDIR%\*.gif" -q %gif2webpq% -m %gif2webpm% -o "%outputDIR%\*_out.webp"
+echo.
+echo Proceed with Enter.
+pause>nul
+
+for %%F in ("%batchmodeDIR%\*.gif") do (
+    %gif2webp_cmd% "%%~F" -q %gif2webpq% -m %gif2webpm% -o "%outputDIR%\%%~nF_out.webp"
+)
+goto end
+
+
+::gif2webp option
+:gif2webp
+set "format=gif2webp"
+
+:: Check for batchmode
+if "%2"=="batch" (
+    set "batchmode=1"
+    echo GifMyAss gif2webp Batchmode
+) else (
+    set "batchmode=0"
+    echo GifMyAss gif2webp
+)
+
+:: Check if gif2webp is available
+set "gif2webp_cmd=gif2webp"
+
+where %gif2webp_cmd% >nul 2>&1
+if errorlevel 1 (
+    if exist "%~dp0gif2webp.exe" (
+        set "gif2webp_cmd=%~dp0gif2webp.exe"
+    ) else (
+        echo [ERROR] gif2webp not found in PATH or next to this script.
+        echo Place gif2webp.exe in the same folder as this script or add it to PATH.
+        pause
+        exit /b
+    )
+)
+if not exist "%outputDIR%\" (md "%outputDIR%\")
+
+echo Name of the input file.ext (ingore in batchmode)
+set /p "inputFile=Inputfile : "
+call set "inputFile=%%inputFile:"=%%"
+
+echo.
+echo 100=best quality and big file, 0=worst quality and small file
+echo.
+echo Default=%gif2webpq%
+set /p "input=Quality Scale : "
+if defined input (set "gif2webpq=%input%")
+call :resetInput
+
+echo.
+echo 6=best compression, 0=least compression
+echo.
+echo Default=%gif2webpm%
+set /p "input=Compression Level : "
+if defined input (set "gif2webpm=%input%")
+call :resetInput
+
+if "%batchmode%"=="1" (goto batchmode)
+
+for %%F in ("%inputFile%") do (
+    echo.
+    echo %gif2webp_cmd% "%%~F" -q %gif2webpq% -m %gif2webpm% -o "%outputDIR%\%%~nF_out.webp"
+    echo.
+    echo Proceed with Enter.
+    pause>nul
+
+    %gif2webp_cmd% "%%~F" -q %gif2webpq% -m %gif2webpm% -o "%outputDIR%\%%~nF_out.webp"
+)
+
+goto end
 
 
 :end
