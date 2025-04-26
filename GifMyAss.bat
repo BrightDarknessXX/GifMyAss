@@ -1,6 +1,6 @@
 @echo off
 
-echo Made by _BrightDarkness_ v1.1 with FFMPEG
+echo Made by _BrightDarkness_ v1.1a with FFMPEG
 echo.
 
 ::Default Values
@@ -30,6 +30,7 @@ if /I "%1"=="help" (
     echo    GifMyAss.bat default        = List default values
     echo    GifMyAss.bat gif2webp       = Uses google's gif2webp
     echo    GifMyAss.bat gif2webp batch = gif2webp Batch mode
+    echo    GifMyAss.bat getFPS ^<file^>  = Gets you the FPS of a file
     echo    GifMyAss.bat help           = Show this help message
     echo ---------------------------------------------------
     exit /b
@@ -54,15 +55,10 @@ if /I "%1"=="default" (
     exit /b
 )
 
-:: Check for batchmode
-if "%1"=="batch" (
-    set "batchmode=1"
-    echo GifMyAss Batchmode
-) else (
-    set "batchmode=0"
-    echo GifMyAss
+if /I "%1"=="getFPS" (
+    ffprobe -v error -select_streams v:0 -show_entries stream=avg_frame_rate -of default=noprint_wrappers=1:nokey=1 "%~2"
+    exit /b
 )
-
 
 :: Check if ffmpeg is available
 set "ffmpeg_cmd=ffmpeg"
@@ -79,6 +75,16 @@ if errorlevel 1 (
     )
 )
 if not exist "%outputDIR%\" (md "%outputDIR%\")
+
+
+:: Check for batchmode
+if "%1"=="batch" (
+    set "batchmode=1"
+    echo GifMyAss Batchmode
+) else (
+    set "batchmode=0"
+    echo GifMyAss
+)
 
 
 ::Start
