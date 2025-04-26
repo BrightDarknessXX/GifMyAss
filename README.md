@@ -13,6 +13,7 @@ Usage:
 - GifMyAss.bat default        = List default values
 - GifMyAss.bat gif2webp       = Uses google's gif2webp
 - GifMyAss.bat gif2webp batch = gif2webp Batch mode
+- GifMyAss.bat getFPS <file>  = Gets you the FPS of a file
 - GifMyAss.bat help           = Show this help message
 
 
