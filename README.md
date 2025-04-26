@@ -5,7 +5,7 @@ Since it's difficult to remember all the command-lines for FFMPEG, and it's hard
 
 AVIF uses libsvtav1 and WEBP uses libwebp. Sadly, no transparency support.
 
-Google's gif2webp to convert any gif to an animated WebP that supports transparency.
+Google's gif2webp to convert any gif to an animated WebP (supports transparency).
 
 Usage:
 - GifMyAss.bat                = Interactive mode
