@@ -12,7 +12,7 @@ The script validates conversion settings, detects alpha transparency when possib
 
 Place the executables next to `GifMyAss_v2.5.ps1`, or add them to `PATH`. The script searches `PATH` first and then checks the script's own directory.
 
-`ffprobe` is recommended for automatic alpha detection. Conversion can continue without it, but transparency will not be detected automatically.
+`ffprobe` is recommended for automatic alpha detection and is used to apply per-file FPS and resolution limits. Conversion can continue without it, but alpha will not be detected and limits cannot be applied.
 
 ## Usage
 
@@ -105,13 +105,28 @@ GetFPS mode accepts files or directories and prints the average frame rate from 
 
 Press Enter at a prompt to keep the displayed default. Invalid values are rejected and the prompt is repeated.
 
+FPS and resolution limits are checked per file against source metadata from `ffprobe`.
+
 ### General
 
 | Setting | Default | Accepted values |
 | --- | --- | --- |
-| FPS | `source` | `source`, `0`, a positive frame rate, rational rate such as `30000/1001`, or named rate: `ntsc`, `pal`, `film`, `ntsc-film` |
-| Resolution | `-1:-1` | `width:height`; positive integers or `-1`/`-2` for automatic dimensions |
+| FPS | `source` | `source`, `0`, a positive frame rate, rational rate such as `30000/1001`, or named rate: `ntsc`, `pal`, `film`, `ntsc-film`; prefix a limit with `<` to cap or `>` to raise source FPS |
+| Resolution | `-1:-1` | `width:height`; positive integers or `-1`/`-2` for automatic dimensions; prefix a width or height limit with `<` to cap or `>` to raise |
 | Alpha | `auto` | `auto`, `on`, or `off`; only shown when an input supports alpha |
+
+FPS limits apply per file:
+
+- `<20` or `<20fps` changes sources above 20 FPS to 20 FPS and leaves slower sources unchanged.
+- `>20` or `>20fps` changes sources below 20 FPS to 20 FPS and leaves faster sources unchanged.
+- Named and rational limits are accepted, for example `<ntsc`, `>24`, or `<30000/1001`.
+
+Resolution limits use `width:height` with `-2` on the unconstrained side:
+
+- `<400:-2` caps width at 400 pixels and calculates height to preserve aspect ratio.
+- `-2:<400` caps height at 400 pixels and calculates width to preserve aspect ratio.
+- `>400:-2` raises width below 400 pixels to 400 and leaves wider sources unchanged.
+- `-2:>400` raises height below 400 pixels to 400 and leaves taller sources unchanged.
 
 ### AVIF
 

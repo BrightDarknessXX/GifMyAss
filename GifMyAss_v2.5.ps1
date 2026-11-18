@@ -81,7 +81,7 @@ $videoExt = '.gif', '.apng', '.mp4', '.m4v', '.mov', '.mkv', '.webm', '.avi', '.
 # Prompt text and supported formats are kept together so one loop can handle each output mode.
 $prompts = @(
     [pscustomobject]@{ Name = 'FPS'; Label = 'FPS'; Info = "Frames Per Second`n'source' keeps the input frame rate (recommended)"; Formats = @('AVIF', 'WEBP') }
-    [pscustomobject]@{ Name = 'scale'; Label = 'Resolution'; Info = "Width:Height`n-1 automatically adjusts width or height`n-2 automatically adjusts and makes it even`n-1:-1 = no scaling"; Formats = @('AVIF', 'WEBP') }
+    [pscustomobject]@{ Name = 'scale'; Label = 'Resolution'; Info = "Width:Height`n-1 automatically adjusts width or height`n-2 adjusts and makes the value even`n-1:-1 = no scaling"; Formats = @('AVIF', 'WEBP') }
     [pscustomobject]@{ Name = 'alpha'; Label = 'Alpha'; Info = 'auto = detect transparency per file, on = always keep alpha, off = never'; Formats = @('AVIF', 'WEBP') }
     [pscustomobject]@{ Name = 'pixfmt'; Label = 'Alpha color format'; Info = 'Used for AVIF files with alpha: yuv420p=smaller, yuv444p=sharper colored edges'; Formats = @('AVIF') }
     [pscustomobject]@{ Name = 'CRF'; Label = 'CRF'; Info = 'CRF: 0=lossless, 23-35=good balance, 40+=lower quality'; Formats = @('AVIF') }
@@ -101,8 +101,8 @@ $promptRules = @{
     alpha        = @{ Type = 'Choice'; Normalize = $true; Values = @('auto', 'on', 'off'); Hint = 'auto, on, or off' }
     pixfmt       = @{ Type = 'Choice'; Normalize = $true; Values = @('yuv420p', 'yuv422p', 'yuv444p'); Hint = 'yuv420p, yuv422p, or yuv444p' }
     gif2webpmode = @{ Type = 'Choice'; Normalize = $true; Values = @('lossless', 'lossy', 'mixed'); Hint = 'lossless, lossy, or mixed' }
-    FPS          = @{ Type = 'FPS'; Normalize = $true; Hint = 'source, 0, a positive frame rate, or a positive ratio such as 30000/1001' }
-    scale        = @{ Type = 'Pattern'; Pattern = '^(?:-1|-2|[1-9]\d*):(?:-1|-2|[1-9]\d*)$'; Hint = 'width:height using positive integers or -1/-2 for automatic dimensions (for example -1:-1)' }
+    FPS          = @{ Type = 'FPS'; Normalize = $true; Hint = 'source, 0, a positive frame rate or ratio, or an FPS limit prefixed with < or > (for example <20)' }
+    scale        = @{ Type = 'Scale'; Hint = 'width:height using positive integers or -1/-2, or a one-sided < or > limit with -2 (for example <400:-2)' }
     CRF          = @{ Type = 'Range'; Range = @(0, 63); Hint = 'an integer from 0 to 63' }
     preset       = @{ Type = 'Range'; Range = @(0, 13); Hint = 'an integer from 0 to 13' }
     cpuused      = @{ Type = 'Range'; Range = @(0, 8); Hint = 'an integer from 0 to 8' }
@@ -129,6 +129,30 @@ function Get-PromptValueValidation([string]$Name, [string]$Value) {
     $isValid = switch ($rule.Type) {
         'Choice' { $normalized -in $rule.Values }
         'Pattern' { $Value -match $rule.Pattern }
+        'Scale' {
+            if ($Value -match '^(-1|-2|[1-9]\d*):(-1|-2|[1-9]\d*)$') {
+                $widthValid = $Matches[1] -in '-1', '-2'
+                $heightValid = $Matches[2] -in '-1', '-2'
+                if (-not $widthValid) {
+                    $widthNumber = 0
+                    $widthValid = [int]::TryParse($Matches[1], [ref]$widthNumber) -and $widthNumber -gt 0
+                }
+                if (-not $heightValid) {
+                    $heightNumber = 0
+                    $heightValid = [int]::TryParse($Matches[2], [ref]$heightNumber) -and $heightNumber -gt 0
+                }
+                $widthValid -and $heightValid
+            }
+            elseif ($Value -match '^([<>])([1-9]\d*):-2$') {
+                $number = 0
+                [int]::TryParse($Matches[2], [ref]$number) -and $number -gt 0
+            }
+            elseif ($Value -match '^-2:([<>])([1-9]\d*)$') {
+                $number = 0
+                [int]::TryParse($Matches[2], [ref]$number) -and $number -gt 0
+            }
+            else { $false }
+        }
         'Range' {
             # TryParse rejects non-integers and overflow without throwing for a bad entry.
             $number = 0
@@ -143,7 +167,28 @@ function Get-PromptValueValidation([string]$Name, [string]$Value) {
                 'film'      = '24/1'
                 'ntsc-film' = '24000/1001'
             }
-            if ($namedRates.ContainsKey($normalized)) {
+            $boundedMatch = [regex]::Match($normalized, '^([<>])(.+?)(?:fps)?$')
+            if ($boundedMatch.Success) {
+                $boundValue = $boundedMatch.Groups[2].Value
+                if ($namedRates.ContainsKey($boundValue)) { $boundValue = $namedRates[$boundValue] }
+                if ($boundValue -match '^(?<num>\d+(?:\.\d+)?)(?:/(?<den>\d+(?:\.\d+)?))?$') {
+                    $number = 0.0
+                    $numeratorValid = [double]::TryParse($Matches.num, [Globalization.NumberStyles]::Float,
+                        [Globalization.CultureInfo]::InvariantCulture, [ref]$number) -and
+                        -not [double]::IsInfinity($number)
+                    $denominator = 1.0
+                    $denominatorValid = $true
+                    if ($Matches.den) {
+                        $denominatorValid = [double]::TryParse($Matches.den, [Globalization.NumberStyles]::Float,
+                            [Globalization.CultureInfo]::InvariantCulture, [ref]$denominator) -and
+                            -not [double]::IsInfinity($denominator)
+                    }
+                    $normalized = "$($boundedMatch.Groups[1].Value)$boundValue"
+                    $numeratorValid -and $denominatorValid -and $number -gt 0 -and $denominator -gt 0
+                }
+                else { $false }
+            }
+            elseif ($namedRates.ContainsKey($normalized)) {
                 $normalized = $namedRates[$normalized]
                 $true
             }
@@ -186,6 +231,26 @@ function Read-ValidatedPrompt([string]$Name, [string]$Label, [string]$DefaultVal
     }
 }
 
+function Convert-ToFPS([string]$Value) {
+    $namedRates = @{
+        'ntsc'      = '30000/1001'
+        'pal'       = '25/1'
+        'film'      = '24/1'
+        'ntsc-film' = '24000/1001'
+    }
+    $normalized = $Value.ToLowerInvariant()
+    if ($namedRates.ContainsKey($normalized)) { $normalized = $namedRates[$normalized] }
+    if ($normalized -match '^(\d+(?:\.\d+)?)\s*/\s*(\d+(?:\.\d+)?)$') {
+        $numerator = [double]::Parse($Matches[1], [Globalization.CultureInfo]::InvariantCulture)
+        $denominator = [double]::Parse($Matches[2], [Globalization.CultureInfo]::InvariantCulture)
+        if ($denominator -gt 0) { return $numerator / $denominator }
+    }
+    elseif ($normalized -match '^\d+(?:\.\d+)?$') {
+        return [double]::Parse($normalized, [Globalization.CultureInfo]::InvariantCulture)
+    }
+    return $null
+}
+
 function Resolve-Executable([string]$Name) {
     # Prefer an executable on PATH, then look beside the script so portable installs work.
     $cmd = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -211,14 +276,19 @@ function Get-VideoInfo([string]$Path) {
     if ($script:videoInfoCache.ContainsKey($cacheKey)) { return $script:videoInfoCache[$cacheKey] }
 
     # Return safe defaults if ffprobe cannot inspect this file; alpha is then treated as absent.
-    $info = [pscustomobject]@{ Codec = ''; Alpha = $false; AlphaMode = $false }
+    $info = [pscustomobject]@{ Codec = ''; Alpha = $false; AlphaMode = $false; Width = 0; Height = 0; FPS = $null }
     if (-not $script:ffprobe) { return $info }
     # Read only the first video stream's codec, pixel format, and alpha_mode tag.
-    $raw = & $script:ffprobe -v error -select_streams v:0 -show_entries 'stream=codec_name,pix_fmt:stream_tags=alpha_mode' -of json $Path 2>$null
+    $raw = & $script:ffprobe -v error -select_streams v:0 -show_entries 'stream=codec_name,pix_fmt,width,height,avg_frame_rate:stream_tags=alpha_mode' -of json $Path 2>$null
     if (-not $raw) { return $info }
     try { $s = (($raw -join "`n") | ConvertFrom-Json).streams | Select-Object -First 1 } catch { return $info }
     if (-not $s) { return $info }
     $info.Codec     = [string]$s.codec_name
+    $info.Width     = [int]$s.width
+    $info.Height    = [int]$s.height
+    if ($s.avg_frame_rate -match '^(\d+)\/([1-9]\d*)$') {
+        $info.FPS = [double]$Matches[1] / [double]$Matches[2]
+    }
     $info.AlphaMode = ($s.tags -and $s.tags.alpha_mode -eq '1')
     # pal8 = GIF palette (may contain a transparent index), the rest are real alpha formats
     $info.Alpha     = ($s.pix_fmt -match '^(pal8|ya8|ya16|argb|abgr|rgba|bgra|ayuv|yuva|gbrap|rgba64|bgra64|argb64|abgr64)') -or $info.AlphaMode
@@ -316,17 +386,56 @@ function New-Job($File) {
 
     # Build video filters in order. With alpha, convert to rgba FIRST so fps/scale filters retain the alpha plane.
     $f = [System.Collections.Generic.List[string]]::new()
+    $scaleApplied = $false
     if ($alpha) { $f.Add('format=rgba') }
-    # "source" and "0" both mean no FPS filter; other accepted values are passed to FFmpeg.
-    if ($cfg.FPS -notmatch '^(source|0)?$') { $f.Add("fps=$($cfg.FPS)") }
+    # "source" and "0" both mean no FPS filter. Bounded values are resolved against each file's source FPS.
+    if ($cfg.FPS -notmatch '^(source|0)?$') {
+        if ($cfg.FPS -match '^([<>])(.+)$') {
+            $targetFPS = Convert-ToFPS $Matches[2]
+            if ($targetFPS -and $info.FPS) {
+                $applyFPS = if ($Matches[1] -eq '<') { $info.FPS -gt $targetFPS } else { $info.FPS -lt $targetFPS }
+                if ($applyFPS) { $f.Add("fps=$($Matches[2])") }
+            }
+            elseif (-not $info.FPS) {
+                Write-Host "[WARN] Could not read source FPS for '$($File.Name)'; FPS limit '$($cfg.FPS)' was not applied." -ForegroundColor Yellow
+            }
+        }
+        else { $f.Add("fps=$($cfg.FPS)") }
+    }
     if ($cfg.scale -eq '-2:-2') {
         # With both dimensions automatic, FFmpeg leaves the input size unchanged; explicitly make both dimensions even.
-        $f.Add("scale=trunc(iw/2)*2:trunc(ih/2)*2:flags=$($cfg.flags)")
+        $f.Add("scale=max(2\,trunc(iw/2)*2):max(2\,trunc(ih/2)*2):flags=$($cfg.flags)")
+        $scaleApplied = $true
     }
-    elseif ($cfg.scale -ne '-1:-1') { $f.Add("scale=$($cfg.scale):flags=$($cfg.flags)") }
-    # With no requested scaling, crop AVIF input down to even dimensions for subsampled AV1 formats.
-    # An explicit scale bypasses this crop; an odd result can fail in the non-alpha libsvtav1/yuv420p path.
-    elseif ($format -eq 'AVIF') { $f.Add('crop=trunc(iw/2)*2:trunc(ih/2)*2') }
+    elseif ($cfg.scale -match '^([<>])([1-9]\d*):-2$') {
+        $operator = $Matches[1]
+        $limit = [int]$Matches[2]
+        $applyLimit = if ($operator -eq '<') { $info.Width -gt $limit } else { $info.Width -gt 0 -and $info.Width -lt $limit }
+        if ($applyLimit) {
+            $f.Add("scale=$($limit):-2:flags=$($cfg.flags)")
+            $scaleApplied = $true
+        }
+        elseif ($info.Width -eq 0) {
+            Write-Host "[WARN] Could not read source width for '$($File.Name)'; resolution limit '$($cfg.scale)' was not applied." -ForegroundColor Yellow
+        }
+    }
+    elseif ($cfg.scale -match '^-2:([<>])([1-9]\d*)$') {
+        $operator = $Matches[1]
+        $limit = [int]$Matches[2]
+        $applyLimit = if ($operator -eq '<') { $info.Height -gt $limit } else { $info.Height -gt 0 -and $info.Height -lt $limit }
+        if ($applyLimit) {
+            $f.Add("scale=-2:$($limit):flags=$($cfg.flags)")
+            $scaleApplied = $true
+        }
+        elseif ($info.Height -eq 0) {
+            Write-Host "[WARN] Could not read source height for '$($File.Name)'; resolution limit '$($cfg.scale)' was not applied." -ForegroundColor Yellow
+        }
+    }
+    elseif ($cfg.scale -ne '-1:-1') {
+        $f.Add("scale=$($cfg.scale):flags=$($cfg.flags)")
+        $scaleApplied = $true
+    }
+    if ($format -eq 'AVIF' -and -not $scaleApplied) { $f.Add('crop=max(2\,trunc(iw/2)*2):max(2\,trunc(ih/2)*2)') }
 
     # Start an FFmpeg argument list; each item stays separate so paths with spaces remain safe.
     $a = [System.Collections.Generic.List[string]]::new()
@@ -387,6 +496,8 @@ Usage:
   GifMyAss.ps1 -Default                     = List default values
   GifMyAss.ps1 -GetFPS <file> [<file>...]   = Get FPS for files or directories
   GifMyAss.ps1 -Help                        = Show this help message
+
+FPS and resolution accept < (cap) and > (raise) limits; e.g. FPS <20, size <400:-2.
 '@
 
 # ---------------------------------------------------------------------------
