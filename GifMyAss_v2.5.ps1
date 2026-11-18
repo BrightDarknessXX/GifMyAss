@@ -76,7 +76,7 @@ $cfg = [ordered]@{
 if (-not [string]::IsNullOrWhiteSpace($OutputDir)) { $cfg.outputDIR = $OutputDir.Trim().Trim('"') }
 
 # Extensions picked up in directory mode; a single file passed explicitly is never filtered.
-$videoExt = '.gif', '.apng', '.mp4', '.m4v', '.mov', '.mkv', '.webm', '.avi', '.wmv', '.flv', '.mpg', '.mpeg', '.ts', '.m2ts', '.3gp'
+$videoExt = '.gif', '.apng', '.mp4', '.m4v', '.mov', '.mkv', '.webm', '.webp', '.avif', '.avi', '.wmv', '.flv', '.mpg', '.mpeg', '.ts', '.m2ts', '.3gp'
 
 # Prompt text and supported formats are kept together so one loop can handle each output mode.
 $prompts = @(
