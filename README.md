@@ -1,48 +1,158 @@
-# GifMyAss
-GifMyAss.bat is a script takes videos and creates animated pictures in these formats: AVIF, WEBP
+# GifMyAss v2.5
 
-Since it's difficult to remember all the command-lines for FFMPEG, and it's hard to find a good CLI or GUI for this task that works the way I need, I created this script and wanted to share it with you.
+GifMyAss is a Windows PowerShell script that converts single files or complete directories to animated AVIF or animated WebP. It uses FFmpeg for AVIF and WebP conversion and Google's `gif2webp` utility for direct GIF-to-WebP conversion.
 
-AVIF uses libsvtav1 and WEBP uses libwebp. Sadly, no transparency support.
+The script validates conversion settings, detects alpha transparency when possible, previews the exact commands, and asks for confirmation before converting anything.
 
-Google's gif2webp to convert any gif to an animated WebP (supports transparency).
+## Prerequisites
 
-Usage:
-- GifMyAss.bat                = Interactive mode
-- GifMyAss.bat batch          = Batch mode
-- GifMyAss.bat default        = List default values
-- GifMyAss.bat gif2webp       = Uses google's gif2webp
-- GifMyAss.bat gif2webp batch = gif2webp Batch mode
-- GifMyAss.bat getFPS <file>  = Gets you the FPS of a file
-- GifMyAss.bat help           = Show this help message
+- Windows PowerShell or PowerShell 7+
+- `ffmpeg.exe` and `ffprobe.exe` for AVIF and FFmpeg-based WebP conversion
+- `gif2webp.exe` for `-Gif2WebP` mode
 
+Place the executables next to `GifMyAss_v2.5.ps1`, or add them to `PATH`. The script searches `PATH` first and then checks the script's own directory.
 
-It uses FFMPEG command line and carries you through the progress.
+`ffprobe` is recommended for automatic alpha detection. Conversion can continue without it, but transparency will not be detected automatically.
 
-Default values are:
-- set "FPS=30"
-- set "scale=-1:-1"
-- set "CRF=25"
-- set "lossless=0"
-- set "compression=6"
-- set "qscale=75"
-- set "preset=4"
-- set "gif2webpq=80"
-- set "gif2webpm=6"
-- set "outputDIR=output"
-- set "batchmodeDIR=batchmode"
+## Usage
 
-# Smart Script
-This script is designed to be easy to use and be smart. The script can handle file input like this 123.mp4 or "123.mp4". So you can easily tab the file you want to choose.
+Run the script from PowerShell:
 
-You can press Enter if you do not want to set a value, instead it uses the pre-defined default value.
+```powershell
+.\GifMyAss_v2.5.ps1
+```
 
-Batch mode will create a folder "batchmode" and will convert every file in that folder to your desired format.
+`GifMyAss_v2.5.ps1` requires a file or directory. Use `-Help` or `-Default` for information-only modes.
 
-Instead of using the reference encoder libaom-av1, I use the libsvtav1 for multi-threading and WAY FASTER conversion.
+### Convert a single file
 
-You can define your own output or batchmode path. You must use normal characters like 0-9, a-z or ! for your folder. ÜÄÖ is not allowed or may need some bypass.
+```powershell
+.\GifMyAss_v2.5.ps1 ".\animation.gif"
+```
 
-# Prerequisites
-You need to have FFMPEG installed and add it to the PATH environment variables OR have the FFMPEG.exe saved next to GifMyAss.bat. This script will find FFMPEG this way.
-You will need the download google's libwebp (gif2webp.exe) if you want to use my script's integrated use of gif2webp.
+Direct file paths are not filtered by extension, so any file accepted by the selected converter can be used.
+
+### Convert a directory
+
+```powershell
+.\GifMyAss_v2.5.ps1 ".\input-folder"
+```
+
+Directory mode processes supported files in alphabetical order. Supported extensions are `.gif`, `.apng`, `.mp4`, `.m4v`, `.mov`, `.mkv`, `.webm`, `.avi`, `.wmv`, `.flv`, `.mpg`, `.mpeg`, `.ts`, `.m2ts`, and `.3gp`.
+
+### Choose the output format
+
+In normal FFmpeg mode, the script prompts for `AVIF` or `WEBP`.
+
+- AVIF without detected alpha uses the fast multi-threaded `libsvtav1` encoder.
+- AVIF with alpha uses `libaom-av1` to encode separate color and alpha tracks.
+- Animated WebP uses `libwebp_anim`.
+
+### Convert GIF files with gif2webp
+
+```powershell
+.\GifMyAss_v2.5.ps1 ".\animation.gif" -Gif2WebP
+```
+
+With a directory, only `.gif` files are selected.
+
+```powershell
+.\GifMyAss_v2.5.ps1 ".\input-folder" -Gif2WebP
+```
+
+### Set the output folder
+
+```powershell
+.\GifMyAss_v2.5.ps1 ".\input-folder" -OutputDir ".\converted"
+```
+
+`-OutputDir` overrides the script's built-in `outputDIR` for that run. The built-in default is currently `Z:\Dropbox\Pictures\raw\GifMyAss\Output`.
+
+Each output is named from the input basename with `_out.avif` or `_out.webp`. For example, `animation.gif` becomes `animation_out.webp`.
+
+Existing outputs are overwritten after confirmation. Inputs that would generate duplicate output names are rejected before conversion.
+
+### Run conversions concurrently
+
+```powershell
+.\GifMyAss_v2.5.ps1 ".\input-folder" -Parallel 4
+```
+
+`-Parallel` accepts 1 through 32 and is available only for WebP and `gif2webp` output in PowerShell 7 or newer. AVIF conversions run one at a time because their encoders already use multiple cores.
+
+Windows PowerShell or AVIF output falls back to serial conversion.
+
+### Inspect frame rates
+
+```powershell
+.\GifMyAss_v2.5.ps1 -GetFPS ".\animation.mp4"
+.\GifMyAss_v2.5.ps1 -GetFPS ".\input-folder"
+.\GifMyAss_v2.5.ps1 -GetFPS ".\first.mp4" ".\second.webm"
+```
+
+GetFPS mode accepts files or directories and prints the average frame rate from `ffprobe`.
+
+### Display information
+
+```powershell
+.\GifMyAss_v2.5.ps1 -Default
+.\GifMyAss_v2.5.ps1 -Help
+```
+
+`-Default` prints the configured defaults. `-Help` prints the command syntax.
+
+## Conversion settings
+
+Press Enter at a prompt to keep the displayed default. Invalid values are rejected and the prompt is repeated.
+
+### General
+
+| Setting | Default | Accepted values |
+| --- | --- | --- |
+| FPS | `source` | `source`, `0`, a positive frame rate, rational rate such as `30000/1001`, or named rate: `ntsc`, `pal`, `film`, `ntsc-film` |
+| Resolution | `-1:-1` | `width:height`; positive integers or `-1`/`-2` for automatic dimensions |
+| Alpha | `auto` | `auto`, `on`, or `off`; only shown when an input supports alpha |
+
+### AVIF
+
+| Setting | Default | Accepted values |
+| --- | --- | --- |
+| Alpha color format | `yuv420p` | `yuv420p`, `yuv422p`, or `yuv444p` |
+| CRF | `20` | Integer from `0` to `63`; `0` is lossless |
+| SVT-AV1 preset | `6` | Integer from `0` to `13`; lower is slower and higher quality |
+| libaom `cpu-used` | `6` | Integer from `0` to `8`; used for AVIF with alpha |
+
+### FFmpeg WebP
+
+| Setting | Default | Accepted values |
+| --- | --- | --- |
+| Lossless | `0` | `0` lossy or `1` lossless |
+| Compression level | `4` | Integer from `0` to `6`; higher takes longer and can improve compression |
+| Quality scale | `75` | Integer from `0` to `100`; used in lossy mode |
+
+### gif2webp
+
+| Setting | Default | Accepted values |
+| --- | --- | --- |
+| Mode | `lossless` | `lossless`, `lossy`, or `mixed` |
+| Quality | `80` | Integer from `0` to `100` |
+| Method | `4` | Integer from `0` to `6`; higher is slower and usually smaller |
+
+The alpha prompts are limited to settings that apply to the detected inputs. GIF transparency is checked from decoded frames; for formats that expose alpha metadata, `ffprobe` is used to detect it.
+
+For gif2webp:
+
+- `lossless` preserves exact colors and produces larger files.
+- `lossy` produces much smaller files.
+- `mixed` lets gif2webp choose per-frame lossless or lossy encoding.
+- In lossless mode, quality is interpreted as compression effort.
+- In lossy and mixed modes, quality is interpreted as visual quality.
+
+## Preview and execution
+
+After settings are collected, the script prints all input files and the exact runnable converter commands. It then waits for confirmation:
+
+- Press Enter to start all conversions.
+- Enter `C` to cancel.
+
+The script validates missing converters and input paths before prompting for settings. Conversion failures remove only outputs created by that failed run, while the script leaves pre-existing outputs untouched.
