@@ -69,7 +69,7 @@ $cfg = [ordered]@{
     gif2webpq    = '80'         # gif2webp quality/effort value; interpretation depends on mode
     gif2webpm    = '4'          # gif2webp compression method, from 0 (fast) to 6 (slow)
     gif2webpmode = 'lossless'   # lossless / lossy / mixed
-    outputDIR    = 'Z:\Dropbox\Pictures\raw\GifMyAss\Output'
+    outputDIR    = '.\output'
 }
 
 # An explicit command-line output folder takes precedence over the built-in default.
