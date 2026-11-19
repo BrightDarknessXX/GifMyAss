@@ -66,7 +66,7 @@ With a directory, only `.gif` files are selected.
 .\GifMyAss_v2.5.ps1 ".\input-folder" -OutputDir ".\converted"
 ```
 
-`-OutputDir` overrides the script's built-in `outputDIR` for that run. The built-in default is currently `Z:\Dropbox\Pictures\raw\GifMyAss\Output`.
+`-OutputDir` overrides the script's built-in `outputDIR` for that run. The built-in default is currently `.\output`.
 
 Each output is named from the input basename with `_out.avif` or `_out.webp`. For example, `animation.gif` becomes `animation_out.webp`.
 
